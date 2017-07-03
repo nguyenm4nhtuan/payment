@@ -39,6 +39,9 @@ echo "\n\n";
 $customer->transfer(2, 3, 40);
 echo "\n\n";
 
+$customer->withdraw(2, 5);
+echo "\n\n";
+
 $customer->findAccount(3);
 echo "\n\n";
 

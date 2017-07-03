@@ -11,7 +11,7 @@ namespace Entity;
 
 use Common\AccountInterface;
 
-class Account extends Base implements AccountInterface
+class Account extends Base
 {
     const TYPE = [
         'active' => 1,
@@ -106,18 +106,18 @@ class Account extends Base implements AccountInterface
         return $this->amounts >= $amount && $this->status === self::TYPE['active'];
     }
 
-    public function toUp()
+    public function canWithdraw($amount)
     {
-        // TODO: Implement toUp() method.
+        return $this->is_virtual === false && $this->amounts >= $amount;
     }
 
-    public function withdraw()
+    public function withdraw($amount)
     {
-        // TODO: Implement withdraw() method.
-    }
-
-    public function transfer()
-    {
-        // TODO: Implement transfer() method.
+        if($this->canWithdraw($amount)) {
+            $this->amounts -= $amount;
+            return true;
+        } else {
+            return false;
+        }
     }
 }

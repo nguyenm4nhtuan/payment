@@ -24,36 +24,33 @@ class Customer extends Base
 
     public function __construct($id)
     {
-        $this->id = $id;
-        $this->_init();
+        $this->_init($id);
     }
 
-    private function _init()
+    private function _init($id)
     {
-        if (!$this->_isValidId()) {
+        if (self::find($id)) {
             throw new \Exception('Id is exists in system !');
         }
+        $this->id = $id;
         $this->save();
         $eWallet = new EWallet($this->id);
         $eWallet->save();
         $eWallet->initAccounts();
     }
 
-    private function _isValidId()
-    {
-        return !isset($GLOBALS['customers'][$this->id]);
-    }
-
     public function setDailyTopUpLimit($limit)
     {
         if (is_numeric($limit)) {
-            print_r('Set daily top up limit is : ' . $limit . 'USD');
+            $msg = 'Set daily top up limit is : ' . $limit . 'USD';
             $this->limitTopUp = $limit;
-            PLog::info('setDailyTopUpLimit', 'Set daily top up limit is : ' . $limit . 'USD');
+            $this->save();
+            PLog::info(__METHOD__, $msg);
         } else {
-            print_r($limit . ' is not number ');
-            PLog::error('setDailyTopUpLimit', $limit . ' is not number ');
+            $msg = $limit . ' is not number ';
+            PLog::error(__METHOD__, $msg);
         }
+        print_r($msg);
     }
 
     public function setDailyWithdrawalLimit($limit)
@@ -91,7 +88,7 @@ class Customer extends Base
     {
         $account = Account::find($accountId);
         if (!$account) {
-            PLog::error(__METHOD__, 'Account : ' . $account->name . ' is not exists');
+            PLog::error(__METHOD__, 'Account : ' . $accountId . ' is not exists');
             return false;
         }
 
@@ -133,6 +130,9 @@ class Customer extends Base
 
     public function canTopUp($money, $currency)
     {
+        if (!is_numeric($money)) {
+            return;
+        }
         $money = Currency::convert($money, $currency, 'USD');
         return $this->limitTopUp === null || $this->limitTopUp >= $money;
     }
@@ -152,7 +152,7 @@ class Customer extends Base
         }
 
         if ($account->addAmount($money)) {
-            print_r("You top up  {$money} {$account->currency} success");
+            print_r("You top up  {$money} {$account->currency} for {$account->name} success");
         } else {
             print_r("Your trade not success , please try again ");
         }
@@ -160,19 +160,22 @@ class Customer extends Base
 
     public function canTransfer($account, $money)
     {
+        if (!is_numeric($money)) {
+            return;
+        }
         $money = Currency::convert($money, $account->currency, 'USD');
-        return $account->amounts >= $money && ($this->limitWithdrawal === null || $this->limitWithdrawal >= $money);
+        return $account->amounts >= $money;
     }
 
     public function transfer($fromAccountId, $toAccountId, $money)
     {
         if (!$fromAccount = Account::find($fromAccountId)) {
-            PLog::error(__METHOD__, 'Account : ' . $fromAccount->name . ' not exists, can not top up');
+            PLog::error(__METHOD__, 'Account : ' . $fromAccountId . ' not exists, can not top up');
             return;
         }
 
         if (!$toAccount = Account::find($toAccountId)) {
-            PLog::error(__METHOD__, 'Account : ' . $toAccount->name . ' not exists, can not top up');
+            PLog::error(__METHOD__, 'Account : ' . $toAccountId . ' not exists, can not top up');
             return;
         }
 
@@ -199,6 +202,42 @@ class Customer extends Base
         }
     }
 
+    public function canWithdraw($account, $money)
+    {
+        if (!is_numeric($money)) {
+            return;
+        }
+
+        $money = Currency::convert($money, $account->currency, 'USD');
+
+        $isSmallerLimit = $this->limitWithdrawal === null || $money <= $this->limitWithdrawal;
+
+        return $isSmallerLimit && $account->canWithdraw($money);
+    }
+
+    public function withdraw($accountId, $money)
+    {
+        $account = Account::find($accountId);
+        if (!$account) {
+            print_r('Account : ' . $accountId . ' is not exists');
+            PLog::error(__METHOD__, 'Account : ' . $accountId . ' is not exists');
+            return;
+        }
+
+        if (!$this->canWithdraw($account, $money)) {
+
+        }
+
+        if ($account->withdraw($money)) {
+            $msg = "You withdraw {$money} {$account->currency} from {$account->name} success";
+            PLog::info(__METHOD__, $msg);
+        } else {
+            $msg = "You withdraw {$money} {$account->currency} from {$account->name} not success , please try again ";
+            PLog::error(__METHOD__, $msg);
+        }
+        print_r($msg);
+    }
+
     public function addAccount($currency)
     {
         $eWallet = EWallet::findBy('customer_id', $this->id)[0];
@@ -219,7 +258,7 @@ class Customer extends Base
     {
         $account = Account::find($accountId);
         $html = '';
-        if($account) {
+        if ($account) {
             $html .= "\n";
             $html .= 'Account id: ' . $account->id;
             $html .= ' -- ';
