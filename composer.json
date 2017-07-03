@@ -1,0 +1,19 @@
+{
+    "name": "mrtuan/payment",
+    "description": "Front end Test Task",
+    "authors": [
+        {
+            "name": "Tuan NM",
+            "email": "nguyenm4nhtuan@gmail.com"
+        }
+    ],
+    "require": {
+        "monolog/monolog": "^1.23",
+        "guzzlehttp/guzzle": "~6.0"
+
+    },
+    "autoload": {
+        "psr-4": { "": "" }
+    }
+
+}
