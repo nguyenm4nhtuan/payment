@@ -8,6 +8,7 @@
 
 namespace Entity;
 
+use Common\Base;
 use Common\PLog;
 
 class EWallet extends Base

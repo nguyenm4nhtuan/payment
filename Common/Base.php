@@ -6,10 +6,7 @@
  * Time: 10:10 AM
  */
 
-namespace Entity;
-
-
-use Common\PLog;
+namespace Common;
 
 class Base
 {

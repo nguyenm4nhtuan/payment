@@ -9,7 +9,7 @@
 
 namespace Entity;
 
-use Common\AccountInterface;
+use Common\Base;
 
 class Account extends Base
 {
@@ -39,28 +39,28 @@ class Account extends Base
     public function __construct($eWalletId, $currency,$name = null)
     {
         parent::__construct();
-        $this->e_wallet_id = $eWalletId;
-        $this->name = $name;
-        $this->currency = $currency;
-        $this->_init();
-
+        $this->_init($eWalletId, $currency,$name);
     }
 
-    private function _init()
+    private function _init($eWalletId, $currency,$name)
     {
-        if(!Currency::isCurrency($this->currency)) {
+        if(!Currency::isCurrency($currency)) {
             throw new \Exception('Currency invalid');
         }
 
-        $this->name = $this->name ?: ucfirst($this->currency) . '-Account';
+        $this->e_wallet_id = $eWalletId;
+        $this->currency = $currency;
+        $this->name = $name ?: ucfirst($this->currency) . '-Account-' . $this->id;
         $this->is_virtual = $this->currency === 'credits';
         $this->number = uniqid();
         $this->status = self::TYPE['active'];
+        $this->amounts = 0;
+        $this->is_default = false;
     }
 
     public function getAmounts()
     {
-        return ($this->amounts ?: 0) . ' ' . $this->currency ;
+        return $this->amounts . ' ' . $this->currency ;
     }
 
     public function canFreeze()
@@ -95,10 +95,9 @@ class Account extends Base
     {
         if($this->canSubtract($amount)) {
             $this->amounts -= $amount;
-            return true;
-        } else {
-            return false;
+            return $this->save();
         }
+        return false;
     }
 
     public function canSubtract($amount)
@@ -115,9 +114,18 @@ class Account extends Base
     {
         if($this->canWithdraw($amount)) {
             $this->amounts -= $amount;
-            return true;
-        } else {
-            return false;
+            return $this->save();
         }
+        return false;
+    }
+
+    public function getStatus()
+    {
+        return array_search($this->status, self::TYPE);
+    }
+
+    public function getDefault()
+    {
+        return $this->is_default ? 'true' : 'false';
     }
 }

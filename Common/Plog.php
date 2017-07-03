@@ -9,6 +9,7 @@
 namespace Common;
 
 
+use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\FirePHPHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -30,10 +31,11 @@ class PLog
     {
         if (self::$instance === null) {
             self::$instance = new Logger('Payment');
-            self::$instance->pushHandler(new StreamHandler(self::getLogPath()));
+            $handler = new StreamHandler(self::getLogPath());
+            $formatter = new LineFormatter(null, null, true, true);
+            $handler->setFormatter($formatter);
+            self::$instance->pushHandler($handler);
             self::$instance->pushHandler(new FirePHPHandler());
-
-
         }
         return self::$instance;
     }
@@ -54,8 +56,7 @@ class PLog
         return json_encode([
             'action' => $action,
             'time' => date('d-m-Y h:i:s'),
-            'msg' => $msg
-        ]);
+            'result' => $msg
+        ], JSON_PRETTY_PRINT);
     }
-
 }

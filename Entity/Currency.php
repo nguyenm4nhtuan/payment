@@ -9,10 +9,11 @@
 namespace Entity;
 
 
+use Common\Base;
 use Common\PLog;
 use GuzzleHttp\Client;
 
-class Currency
+class Currency extends Base
 {
     private static $_rateApi = 'http://api.fixer.io/latest';
     private static $_currencies = [
